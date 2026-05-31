@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Cracko Forge Pro - Creator Studio v4.5</title>
+
+<style>
+  :root {
+    --bg-main: #0a0a0c;
+    --bg-panel: #121216;
+    --bg-input: #1c1c24;
+    --border-color: #2a2a35;
+    --accent: #00ffff;
+  }
+
+  body {
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg-main);
+    color: #e4e4e7;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* PANEL LATERAL DE CONTROL */
+  .panel {
+    width: 360px;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border-color);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    z-index: 10;
+    overflow-y: auto;
+    height: 100vh;
+    gap: 4px;
+  }
+
+  .panel-header h1 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0 0 4px 0;
+    background: linear-gradient(45deg, #fff, #888);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .panel-header p {
+    font-size: 0.8rem;
+    color: #666;
+    margin: 0 0 15px 0;
+  }
+
+  .section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+    margin-top: 16px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 6px;
+  }
+
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  /* Checkbox Estilizado */
+  .checkbox-group {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    cursor: pointer;
+  }
+
+  .checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  label {
+    font-size: 0.8rem;
+    color: #94a3b8;
+  }
+
+  select, input[type="text"], input[type="range"] {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    outline: none;
+    box-sizing: border-box;
+  }
+
+  .color-picker-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: 8px;
+  }
+
+  input[type="color"] {
+    -webkit-appearance: none;
+    border: none;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    background: none;
+  }
+
+  input[type="color"]::-webkit-color-swatch {
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+  }
+
+  .btn-action {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #f8fafc;
+    font-weight: 600;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 0.85rem;
+    text-align: center;
+  }
+  .btn-action:hover { background: #334155; }
+  .btn-action.active { background: #059669; border-color: #10b981; }
+
+  .btn-export {
+    background: var(--accent);
+    color: #000;
+    font-weight: 700;
+    border: none;
+    padding: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 20px rgba(0, 255, 255, 0.15);
+    margin-top: 20px;
+    position: sticky;
+    bottom: 0;
+  }
+
+  /* VIEWPORT */
+  .viewport {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-image: radial-gradient(var(--bg-main) 40%, transparent 41%), linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.01) 1px, transparent 1px);
+    background-size: 100% 100%, 20px 20px, 20px 20px;
+    overflow: auto;
+    padding: 40px;
+  }
+
+  /* CANVAS ABSOLUTO */
+  #canvas-container {
+    width: 1280px;
+    height: 720px;
+    background: transparent;
+    position: relative;
+    border: 1px dashed #3a3a4a;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.6);
+    overflow: hidden;
+  }
+
+  #canvas-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  #webcam-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+    display: none;
+  }
+
+  /* CAPAS ARRASTRABLES (DRAGGABLE LAYERS) */
+  .draggable-layer {
+    position: absolute;
+    cursor: move;
+    user-select: none;
+    touch-action: none;
+    z-index: 5;
+    border: 1px dashed transparent;
+    transition: border-color 0.2s, background-color 0.2s, padding 0.2s;
+  }
+
+  .draggable-layer:hover {
+    border-color: rgba(0, 255, 255, 0.4);
+  }
+
+  /* CAJA MAESTRA DEL NOMBRE ACTUALIZADA */
+  #layer-text {
+    top: 580px;
+    left: 440px;
+    color: #ffffff;
+    font-size: 36px;
+    font-weight: 800;
+    /* Estilos iniciales del fondo de la etiqueta */
+    background-color: rgba(0, 0, 0, 0.6); 
+    padding: 8px 24px;
+    border-radius: 6px;
+    display: inline-block;
+    white-space: nowrap;
+  }
+
+  #layer-image {
+    top: 100px;
+    left: 900px;
+    max-width: 250px;
+    display: none;
+  }
+
+  #layer-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+    pointer-events: none;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Bebas+Neue&family=Inter:wght@400;700&display=swap');
+  .f-inter { font-family: 'Inter', sans-serif; }
+  .f-orbitron { font-family: 'Orbitron', sans-serif; }
+  .f-bebas { font-family: 'Bebas Neue', sans-serif; }
+</style>
+</head>
+<body>
+
+  <div class="panel">
+    <div class="panel-body">
+      <div class="panel-header">
+        <h1>CRACKO FORGE PRO</h1>
+        <p>Creator Studio v4.5</p>
+      </div>
+
+      <div class="section-title">Hardware</div>
+      <div class="control-group">
+        <button id="cameraBtn" class="btn-action" onclick="toggleCamera()">Activar Cámara Web</button>
+      </div>
+
+      <div class="section-title">Geometría del Marco</div>
+      <div class="control-group">
+        <label for="shapeSelect">Preset de Forma</label>
+        <select id="shapeSelect">
+          <option value="rombo">Diamante / Rombo</option>
+          <option value="rect">Rectángulo 16:9</option>
+          <option value="square">Cuadrado 1:1</option>
+          <option value="circle">Círculo Perfecto</option>
+          <option value="hexagon">Hexágono Competitivo</option>
+        </select>
+      </div>
+
+      <div class="section-title">Estilo de Neón & Fondo</div>
+      <div class="control-group">
+        <label>Color del Neón</label>
+        <div class="color-picker-wrapper">
+          <input type="color" id="colorPicker" value="#00ffff">
+          <span id="colorHex" style="font-size: 0.85rem; color: #888;">#00FFFF</span>
+        </div>
+      </div>
+      <div class="control-group">
+        <label for="fillOpacity">Opacidad del Fondo Interno</label>
+        <input type="range" id="fillOpacity" min="0" max="100" value="30" step="5">
+      </div>
+
+      <div class="section-title">Capa de Texto (Nickname)</div>
+      <div class="control-group">
+        <label for="textInput">Contenido del Texto</label>
+        <input type="text" id="textInput" value="TU NOMBRE" placeholder="Escribe aquí...">
+      </div>
+      <div class="control-group">
+        <label for="fontSelect">Fuente Tipográfica</label>
+        <select id="fontSelect">
+          <option value="f-inter">Inter (Moderno)</option>
+          <option value="f-orbitron">Orbitron (Gamer)</option>
+          <option value="f-bebas">Bebas Neue (Impacto)</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Color del Texto</label>
+        <div class="color-picker-wrapper">
+          <input type="color" id="textColorPicker" value="#ffffff">
+        </div>
+      </div>
+      <div class="control-group">
+        <label for="textSize">Tamaño de Fuente</label>
+        <input type="range" id="textSize" min="20" max="80" value="36">
+      </div>
+
+      <div class="control-group checkbox-group">
+        <input type="checkbox" id="showTextBg" checked>
+        <label for="showTextBg" style="color: #fff; font-weight: 600;">Activar Fondo del Nombre</label>
+      </div>
+      
+      <div id="textBgControls">
+        <div class="control-group">
+          <label>Color del Fondo</label>
+          <div class="color-picker-wrapper">
+            <input type="color" id="textBgColorPicker" value="#000000">
+          </div>
+        </div>
+        <div class="control-group">
+          <label for="textBgRadius">Redondeado de Esquinas</label>
+          <input type="range" id="textBgRadius" min="0" max="30" value="6">
+        </div>
+      </div>
+
+      <div class="section-title">Capa de Imagen (Logos / Sponsors)</div>
+      <div class="control-group">
+        <label for="imageLoader" class="btn-action">Subir Imagen PNG/JPG</label>
+        <input type="file" id="imageLoader" accept="image/*" style="display: none;">
+      </div>
+      <div class="control-group">
+        <label for="imageSize">Tamaño del Logo</label>
+        <input type="range" id="imageSize" min="50" max="500" value="250">
+      </div>
+    </div>
+
+    <button class="btn-export" onclick="exportOverlay()">Exportar Overlay Completo</button>
+  </div>
+
+  <div class="viewport">
+    <div id="canvas-container">
+      <video id="webcam-video" autoplay playsinline muted></video>
+
+      <svg id="canvas-svg" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="neon-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur id="svgBlur" stdDeviation="20" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          <clipPath id="videoClip">
+            <path id="clipPathShape" d="" />
+          </clipPath>
+        </defs>
+        <path id="dynamicShape" d="" fill="#000000" fill-opacity="0.3" stroke="#00ffff" stroke-width="4" filter="url(#neon-glow)" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+
+      <div id="layer-text" class="draggable-layer f-inter">TU NOMBRE</div>
+      
+      <div id="layer-image" class="draggable-layer">
+        <img id="loaded-img" src="" alt="Overlay Asset">
+      </div>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<script>
+  // DOM Elements básicos
+  const canvasContainer = document.getElementById('canvas-container');
+  const dynamicShape = document.getElementById('dynamicShape');
+  const clipPathShape = document.getElementById('clipPathShape');
+  const shapeSelect = document.getElementById('shapeSelect');
+  const videoElement = document.getElementById('webcam-video');
+  const cameraBtn = document.getElementById('cameraBtn');
+  const colorPicker = document.getElementById('colorPicker');
+  const colorHex = document.getElementById('colorHex');
+  const fillOpacity = document.getElementById('fillOpacity');
+
+  // Text Elements & Inputs
+  const layerText = document.getElementById('layer-text');
+  const textInput = document.getElementById('textInput');
+  const fontSelect = document.getElementById('fontSelect');
+  const textColorPicker = document.getElementById('textColorPicker');
+  const textSize = document.getElementById('textSize');
+
+  // NUEVOS: Inputs de control de fondo para texto
+  const showTextBg = document.getElementById('showTextBg');
+  const textBgColorPicker = document.getElementById('textBgColorPicker');
+  const textBgRadius = document.getElementById('textBgRadius');
+  const textBgControls = document.getElementById('textBgControls');
+
+  // Image Elements
+  const layerImage = document.getElementById('layer-image');
+  const imageLoader = document.getElementById('imageLoader');
+  const loadedImg = document.getElementById('loaded-img');
+  const imageSize = document.getElementById('imageSize');
+
+  let streamActive = null;
+
+  const shapesData = {
+    rombo: "M 640,160 L 840,360 L 640,560 L 440,360 Z",
+    rect: "M 440,210 L 840,210 L 840,510 L 440,510 Z",
+    square: "M 490,160 L 790,160 L 790,460 L 490,460 Z",
+    circle: "M 640,360 m -170,0 a 170,170 0 1,0 340,0 a 170,170 0 1,0 -340,0",
+    hexagon: "M 640,160 L 810,260 L 810,460 L 640,560 L 470,460 L 470,260 Z"
+  };
+
+  function updateShape() {
+    const pathValue = shapesData[shapeSelect.value];
+    dynamicShape.setAttribute('d', pathValue);
+    clipPathShape.setAttribute('d', pathValue);
+  }
+  shapeSelect.addEventListener('change', updateShape);
+
+  // --- MOTOR DE ARRASTRE (POINTER EVENTS) ---
+  function makeElementDraggable(element) {
+    let isDragging = false;
+    let startX, startY, initialLeft, initialTop;
+
+    element.addEventListener('pointerdown', (e) => {
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      initialLeft = parseInt(window.getComputedStyle(element).left) || 0;
+      initialTop = parseInt(window.getComputedStyle(element).top) || 0;
+      element.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+
+    element.addEventListener('pointermove', (e) => {
+      if (!isDragging) return;
+      let newLeft = initialLeft + (e.clientX - startX);
+      let newTop = initialTop + (e.clientY - startY);
+      element.style.left = `${newLeft}px`;
+      element.style.top = `${newTop}px`;
+    });
+
+    element.addEventListener('pointerup', (e) => {
+      isDragging = false;
+      element.releasePointerCapture(e.pointerId);
+    });
+  }
+
+  makeElementDraggable(layerText);
+  makeElementDraggable(layerImage);
+
+  textInput.addEventListener('input', () => {
+    layerText.textContent = textInput.value || '';
+  });
+  fontSelect.addEventListener('change', () => {
+    layerText.className = `draggable-layer ${fontSelect.value}`;
+  });
+  textColorPicker.addEventListener('input', (e) => {
+    layerText.style.color = e.target.value;
+  });
+  textSize.addEventListener('input', (e) => {
+    layerText.style.fontSize = `${e.target.value}px`;
+  });
+
+  // --- NUEVA LÓGICA: INTERRUPTOR Y ESTILO DE FONDO DE TEXTO ---
+  showTextBg.addEventListener('change', () => {
+    if (showTextBg.checked) {
+      layerText.style.backgroundColor = textBgColorPicker.value;
+      layerText.style.padding = "8px 24px";
+      textBgControls.style.opacity = "1";
+      textBgControls.style.pointerEvents = "all";
+    } else {
+      layerText.style.backgroundColor = "transparent";
+      layerText.style.padding = "0px";
+      textBgControls.style.opacity = "0.4";
+      textBgControls.style.pointerEvents = "none";
+    }
+  });
+
+  textBgColorPicker.addEventListener('input', (e) => {
+    if (showTextBg.checked) {
+      layerText.style.backgroundColor = e.target.value;
+    }
+  });
+
+  textBgRadius.addEventListener('input', (e) => {
+    layerText.style.borderRadius = `${e.target.value}px`;
+  });
+
+  imageLoader.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        loadedImg.src = event.target.result;
+        layerImage.style.display = 'block';
+      }
+      reader.readAsDataURL(file);
+    }
+  });
+  imageSize.addEventListener('input', (e) => {
+    layerImage.style.width = `${e.target.value}px`;
+  });
+
+  colorPicker.addEventListener('input', (e) => {
+    colorHex.textContent = e.target.value.toUpperCase();
+    dynamicShape.setAttribute('stroke', e.target.value);
+  });
+  fillOpacity.addEventListener('input', (e) => {
+    dynamicShape.setAttribute('fill-opacity', e.target.value / 100);
+  });
+
+  async function toggleCamera() {
+    if (streamActive) {
+      streamActive.getTracks().forEach(track => track.stop());
+      videoElement.style.display = 'none';
+      cameraBtn.textContent = "Activar Cámara Web";
+      cameraBtn.classList.remove('active');
+      streamActive = null;
+    } else {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
+        videoElement.srcObject = stream;
+        videoElement.style.display = 'block';
+        videoElement.style.clipPath = "url(#videoClip)";
+        cameraBtn.textContent = "Apagar Cámara Web";
+        cameraBtn.classList.add('active');
+        streamActive = stream;
+      } catch (err) {
+        alert("Recuerda levantar un servidor local (Live Server) para previsualizar la cámara de forma segura.");
+      }
+    }
+  }
+
+  updateShape();
+
+  function exportOverlay() {
+    const videoState = videoElement.style.display;
+    videoElement.style.display = 'none';
+    document.body.style.cursor = 'wait';
+
+    html2canvas(canvasContainer, {
+      backgroundColor: null,
+      scale: 3,
+      logging: false,
+      useCORS: true
+    }).then(canvas => {
+      const link = document.createElement('a');
+      link.download = `overlay-studio-v4.5.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      
+      videoElement.style.display = videoState;
+      document.body.style.cursor = 'default';
+    }).catch(err => {
+      videoElement.style.display = videoState;
+      document.body.style.cursor = 'default';
+      console.error(err);
+    });
+  }
+</script>
+
+</body>
+</html>
