@@ -1,11 +1,41 @@
 {
-  "name": "crackostudiohub",
+  "name": "cracko-studio-hub",
   "version": "1.0.0",
+  "productName": "Cracko Studio Hub",
+  "description": "Estudio de creación y personalización de overlays en tiempo real.",
+  "author": "Aleca",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder --windows"
   },
   "devDependencies": {
-    "electron": "^31.0.0"
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3",
+    "electron-packager": "^17.1.2"
+  },
+  "build": {
+    "appId": "com.crackostudio.hub",
+    "productName": "Cracko Studio Hub",
+    "directories": {
+      "output": "compilacion-nueva"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "logo.ico",
+      "cscLink": null
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Cracko Studio Hub"
+    },
+    "files": [
+      "main.js",
+      "package.json",
+      "logo.ico"
+    ]
   }
 }
